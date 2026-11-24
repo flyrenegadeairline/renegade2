@@ -134,15 +134,32 @@ if (localBookingForm) {
   const dateFields = Array.from(localBookingForm.querySelectorAll('input[type="date"]'));
   const travellerFields = Array.from(localBookingForm.querySelectorAll('input[type="number"]'));
   const tripRadios = Array.from(localBookingForm.querySelectorAll('input[name="trip"]'));
+  const additionalDestinations = [
+    { code: "NYK", name: "Nanyuki", fare: 6500, type: "Private charter" },
+    { code: "UKA", name: "Ukunda (Diani)", fare: 8500, type: "Route fare" },
+    { code: "LOK", name: "Lodwar", fare: 10000, type: "Route fare" },
+  ];
+  additionalDestinations.forEach((destination) => {
+    citySelects.slice(0, 2).forEach((select) => {
+      if (select.querySelector(`option[value="${destination.code}"]`)) return;
+      const option = document.createElement("option");
+      option.value = destination.code;
+      option.textContent = `${destination.name} (${destination.code})`;
+      select.appendChild(option);
+    });
+  });
   const standardFares = {
     EDL: 5500,
     KIS: 6500,
     MBA: 6500,
-    MYD: 8500,
+    MYD: 7500,
     KTL: 7000,
     HBY: 7800,
     WJR: 9000,
     MRE: 10000,
+    NYK: 6500,
+    UKA: 8500,
+    LOK: 10000,
   };
   const demandBumps = { EDL: 300, KIS: 350, MBA: 250, MYD: 350, KTL: 350, HBY: 250, WJR: 250, MRE: 300 };
   const routeSchedules = {
@@ -163,6 +180,7 @@ if (localBookingForm) {
     year: "numeric",
   });
   const money = (amount) => `Ksh ${new Intl.NumberFormat("en-KE").format(amount)}`;
+  const inquiryOnlyRoutes = new Set(additionalDestinations.map((destination) => destination.code));
   const escapeHtml = (value) =>
     String(value ?? "").replace(/[&<>"']/g, (character) => ({
       "&": "&amp;",
@@ -178,7 +196,7 @@ if (localBookingForm) {
   };
   const airportName = (code) => {
     const option = citySelects[0]?.querySelector(`option[value="${code}"]`);
-    return option ? option.textContent.replace(/\s*\([^)]*\)/g, "").trim() : code;
+    return option ? option.textContent.replace(/\s*\([A-Z]{3}\)$/, "").trim() : code;
   };
   const passengerCounts = () => ({
     adults: Math.min(9, Math.max(1, Number(travellerFields[0]?.value) || 1)),
@@ -224,6 +242,51 @@ if (localBookingForm) {
   };
   const currentFare = (flight) =>
     flight.standardFare + fareBump(search.depart) + (search.cabin === "flex" ? 2600 : 0);
+
+  const routeHeading = Array.from(document.querySelectorAll("main .eyebrow"))
+    .find((element) => element.textContent.trim() === "Flights from Nairobi Wilson");
+  const routeSection = routeHeading?.closest("section");
+  const routeList = routeSection?.querySelector("ul");
+  if (routeList) {
+    const malindiRow = Array.from(routeList.querySelectorAll("li"))
+      .find((item) => item.textContent.includes("MYD"));
+    const malindiFare = malindiRow?.querySelectorAll("p")[1];
+    if (malindiFare) malindiFare.textContent = `Scheduled service · from ${money(standardFares.MYD)}`;
+
+    const routeDescription = Array.from(routeSection.querySelectorAll("p"))
+      .find((paragraph) => paragraph.textContent.includes("Scheduled flights depart"));
+    if (routeDescription) {
+      routeDescription.textContent =
+        "Scheduled flights and private charter options are available from Nairobi Wilson Airport across Kenya. Our team confirms route schedules, availability and charter details on WhatsApp.";
+    }
+
+    const destinationCount = Array.from(routeSection.querySelectorAll("strong"))
+      .find((element) => element.nextElementSibling?.textContent.trim() === "Destinations");
+    if (destinationCount) destinationCount.textContent = "11";
+
+    const routeTemplate = routeList.querySelector("li");
+    additionalDestinations.forEach((destination) => {
+      if (Array.from(routeList.querySelectorAll("li"))
+        .some((item) => item.textContent.includes(destination.code))) return;
+      const row = routeTemplate?.cloneNode(true);
+      const link = row?.querySelector("a");
+      const paragraphs = link?.querySelectorAll("p");
+      const title = link?.querySelector("h3");
+      if (!row || !link || !paragraphs || !title) return;
+
+      paragraphs[0].textContent = `WIL → ${destination.code}`;
+      title.textContent = `Nairobi Wilson to ${destination.name}`;
+      paragraphs[1].textContent = `${destination.type} · from ${money(destination.fare)}`;
+      link.href = "#";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        citySelects[0].value = "WIL";
+        citySelects[1].value = destination.code;
+        localBookingForm.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      routeList.appendChild(row);
+    });
+  }
 
   localResults.hidden = true;
   localResults.classList.add("flight-search-results");
@@ -309,8 +372,38 @@ if (localBookingForm) {
     updateQuery("book-flight");
     const routeCode = `${search.from} → ${search.to}`;
     const routeName = `${airportName(search.from)} to ${airportName(search.to)}`;
+    const route = search.from === "WIL" ? search.to : search.from;
     const baseFare = search.from === "WIL" ? standardFares[search.to] :
       search.to === "WIL" ? standardFares[search.from] : null;
+
+    if (inquiryOnlyRoutes.has(route) && (search.from === "WIL" || search.to === "WIL")) {
+      const destination = additionalDestinations.find((item) => item.code === route);
+      const message = [
+        `Hello Renegade Air, please confirm ${destination.type.toLowerCase()} availability.`,
+        `Route: ${routeName} (${routeCode})`,
+        `Departure: ${displayDate(search.depart)}`,
+        search.returnDate ? `Return: ${displayDate(search.returnDate)}` : "",
+        `Travellers: ${search.adults + search.children + search.infants}`,
+        `Starting fare: ${money(destination.fare)} one way`,
+      ].filter(Boolean).join("\n");
+      localResults.innerHTML = `
+        <div class="local-results-panel">
+          <div class="flight-search-results-heading">
+            <div><p class="eyebrow">${escapeHtml(destination.type)}</p><h2>${escapeHtml(routeName)}</h2></div>
+            <button class="flight-search-close" type="button" aria-label="Close search results">×</button>
+          </div>
+          <div class="local-search-summary"><strong>${routeCode}</strong><span>${displayDate(search.depart)}${search.returnDate ? ` · Return ${displayDate(search.returnDate)}` : ""}</span><span>${search.adults + search.children + search.infants} traveller${search.adults + search.children + search.infants === 1 ? "" : "s"}</span></div>
+          <article class="local-inquiry-card"><p class="eyebrow">Starting fare</p><strong>${money(destination.fare)}</strong><span>one way · ${escapeHtml(destination.type)}</span></article>
+          <p>Schedule and availability are confirmed by our team. ${destination.code === "NYK" ? "Charter timing and arrangements are made by request." : "Your requested travel date and route will be confirmed on WhatsApp."}</p>
+          <a class="flight-search-contact" href="https://wa.me/254786799922?text=${encodeURIComponent(message)}" target="_blank" rel="noopener noreferrer">Confirm this route on WhatsApp <span aria-hidden="true">→</span></a>
+        </div>`;
+      localResults.hidden = false;
+      localResults.querySelector(".flight-search-close").addEventListener("click", () => {
+        exitSearchMode();
+        window.history.replaceState({}, "", window.location.pathname);
+      });
+      return;
+    }
 
     if (!baseFare) {
       localResults.innerHTML = `
@@ -325,7 +418,6 @@ if (localBookingForm) {
       return;
     }
 
-    const route = search.from === "WIL" ? search.to : search.from;
     const schedule = routeSchedules[route][search.from === "WIL" ? "outbound" : "inbound"];
     const flights = schedule.map(([depart, arrive, duration], index) => ({
       id: index === 0 ? "AM" : "PM",

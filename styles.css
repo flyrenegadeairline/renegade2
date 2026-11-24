@@ -236,6 +236,32 @@ body.local-search-mode .booking-panel {
   gap: 0.75rem;
 }
 
+.local-inquiry-card {
+  display: grid;
+  justify-items: start;
+  gap: 0.3rem;
+  margin: 1rem 0;
+  padding: 1.2rem;
+  border: 1px solid #e1e7ed;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.local-inquiry-card .eyebrow {
+  margin: 0;
+  color: #687786;
+}
+
+.local-inquiry-card > strong {
+  color: #10253a;
+  font: 700 1.6rem Outfit, sans-serif;
+}
+
+.local-inquiry-card > span {
+  color: #687786;
+  font-size: 0.85rem;
+}
+
 .local-flight-card {
   display: grid;
   grid-template-columns: minmax(230px, 1.2fr) minmax(180px, 0.9fr) minmax(180px, 0.8fr) auto;
