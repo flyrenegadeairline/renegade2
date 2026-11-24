@@ -2,6 +2,13 @@ const WHATSAPP_NUMBER = "254786799922";
 const CALL_NUMBER = "+254786703129";
 const CALL_DISPLAY_NUMBER = "0786703129";
 
+const createBookingReference = () => {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = new Uint8Array(6);
+  window.crypto.getRandomValues(bytes);
+  return `RA-${Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("")}`;
+};
+
 function closeMenu() {
   document.getElementById("renegade-menu")?.remove();
   document.body.style.overflow = "";
@@ -213,6 +220,7 @@ if (localBookingForm) {
     year: "numeric",
   });
   const money = (amount) => `Ksh ${new Intl.NumberFormat("en-KE").format(amount)}`;
+  const kes = (amount) => new Intl.NumberFormat("en-KE").format(amount);
   const inquiryOnlyRoutes = new Set(additionalDestinations.map((destination) => destination.code));
   const escapeHtml = (value) =>
     String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -434,6 +442,7 @@ if (localBookingForm) {
   let selectedSeats = [];
   let passengerDetails = [];
   let contactDetails = {};
+  let bookingReference = "";
 
   const renderResults = () => {
     setSearchMode(false);
@@ -600,6 +609,7 @@ if (localBookingForm) {
         selectedSeats = [];
         passengerDetails = [];
         contactDetails = {};
+        bookingReference = createBookingReference();
         renderSeatStage();
       });
     }
@@ -737,23 +747,42 @@ if (localBookingForm) {
   const renderReviewStage = () => {
     setSearchMode(true);
     updateQuery("reserve", "review");
+    if (!bookingReference) bookingReference = createBookingReference();
     const names = passengerDetails.map((traveler, index) => `<li>${index + 1}. ${escapeHtml(traveler.title)} ${escapeHtml(traveler.first)} ${escapeHtml(traveler.last)}<span>${index < seatCount() ? `Seat ${escapeHtml(selectedSeats[index])}` : "Infant"} · ${escapeHtml(traveler.id)}</span></li>`).join("");
+    const totalPassengers = search.adults + search.children + search.infants;
+    const farePerPassenger = currentFare(selectedFlight);
+    const fareTotal = farePerPassenger * (search.adults + search.children);
+    const passengerMessage = passengerDetails.flatMap((traveler, index) => {
+      const prefix = passengerDetails.length > 1 ? `Passenger ${index + 1} ` : "";
+      return [
+        `${prefix}Name: ${traveler.title} ${traveler.first} ${traveler.last}`,
+        `${prefix}ID/Passport: ${traveler.id}`,
+      ];
+    });
     const message = [
-      "Hello Renegade Air, please confirm my reservation.",
-      `Flight: ${selectedFlight.label} · ${selectedFlight.depart}–${selectedFlight.arrive}`,
-      `Route: ${airportName(search.from)} (${search.from}) to ${airportName(search.to)} (${search.to})`,
-      `Departure: ${displayDate(search.depart)}`,
-      search.returnDate ? `Return: ${displayDate(search.returnDate)} (flight to be confirmed)` : "",
-      `Seats: ${selectedSeats.join(", ")}`,
-      ...passengerDetails.map((traveler, index) => `Passenger ${index + 1}: ${traveler.title} ${traveler.first} ${traveler.last} · ${traveler.id}`),
-      `Contact: ${contactDetails.name} · ${contactDetails.phone} · ${contactDetails.email}`,
-      `Estimated fare: ${money(currentFare(selectedFlight) * (search.adults + search.children))}`,
-      contactDetails.requests ? `Special requests: ${contactDetails.requests}` : "",
-    ].filter(Boolean).join("\n");
+      "New booking request — Renegade Air",
+      `Reference: ${bookingReference}`,
+      "",
+      `Route: ${airportName(search.from)} (${search.from}) → ${airportName(search.to)} (${search.to}) · ${selectedFlight.label}`,
+      `Departure: ${selectedFlight.depart} (Daily)`,
+      `Date: ${displayDate(search.depart)} | Passengers: ${totalPassengers}`,
+      `Trip: ${search.trip === "return" ? "Return" : "One way"}`,
+      ...(search.returnDate ? [`Return date: ${displayDate(search.returnDate)}`] : []),
+      `Seat(s): ${selectedSeats.join(", ") || "To be selected"}`,
+      "",
+      ...passengerMessage,
+      `Phone: ${contactDetails.phone}`,
+      `Email: ${contactDetails.email}`,
+      `Nationality: ${contactDetails.nationality}`,
+      ...(contactDetails.requests ? [`Special requests: ${contactDetails.requests}`] : []),
+      `Fare quoted: KES ${kes(farePerPassenger)} pp (standard KES ${kes(selectedFlight.standardFare)}) · Economy ${search.cabin === "flex" ? "Flex" : "Saver"} · estimated total KES ${kes(fareTotal)} — subject to confirmation`,
+      "",
+      "Please confirm seat availability, payment instructions and ticket issue. Thank you.",
+    ].join("\n");
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     localResults.innerHTML = `
       <section class="local-reservation">
-        <div class="local-reservation-heading"><p class="eyebrow">Guest reservation</p><h1>Review your booking.</h1><p>Check your details before sending your request to our WhatsApp team.</p></div>
+        <div class="local-reservation-heading"><p class="eyebrow">Guest reservation · ${bookingReference}</p><h1>Review your booking.</h1><p>Check your details before sending your request to our WhatsApp team.</p></div>
         <ol class="local-progress"><li>1 <span>Seats</span></li><li>2 <span>Passenger details</span></li><li class="is-current">3 <span>Review</span></li><li>4 <span>WhatsApp confirmation</span></li></ol>
         <div class="local-reservation-grid"><div class="local-review-panel">
           <div class="local-review-section"><div><h2>Passengers</h2><button type="button" data-action="edit-passengers">Edit</button></div><ul>${names}</ul></div>
