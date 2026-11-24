@@ -52,6 +52,22 @@ if (!document.querySelector(".local-call-shortcut")) {
   document.body.appendChild(callShortcut);
 }
 
+const footerInfo = Array.from(document.querySelectorAll("footer h2"))
+  .find((heading) => heading.textContent.trim() === "Information")?.parentElement;
+if (footerInfo && !footerInfo.querySelector(".local-footer-contact")) {
+  const footerContact = document.createElement("div");
+  footerContact.className = "local-footer-contact";
+  footerContact.innerHTML = `
+    <h3>Get in touch</h3>
+    <a href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello Renegade Air, I would like to get in touch.")}" target="_blank" rel="noopener noreferrer">
+      <span>WhatsApp</span><strong>0786799922</strong>
+    </a>
+    <a href="tel:${CALL_NUMBER}">
+      <span>Call</span><strong>${CALL_DISPLAY_NUMBER}</strong>
+    </a>`;
+  footerInfo.appendChild(footerContact);
+}
+
 const tripLabels = Array.from(document.querySelectorAll("label")).filter((label) =>
   /^(Return|One way)$/.test(label.textContent.trim())
 );
