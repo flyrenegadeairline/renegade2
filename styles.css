@@ -694,6 +694,36 @@ body.local-search-mode .booking-panel {
   cursor: not-allowed;
 }
 
+.local-call-shortcut {
+  position: fixed;
+  right: 5.5rem;
+  bottom: 1.25rem;
+  z-index: 40;
+  display: inline-flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.9rem;
+  border-radius: 9999px;
+  background: #10253a;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.local-call-shortcut:hover {
+  transform: translateY(-1px);
+  background: #173652;
+}
+
+.local-call-shortcut:focus-visible {
+  outline: 2px solid #1879a7;
+  outline-offset: 3px;
+}
+
 @media (max-width: 850px) {
   .local-flight-card {
     grid-template-columns: 1fr 1fr;

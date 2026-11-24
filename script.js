@@ -1,3 +1,7 @@
+const WHATSAPP_NUMBER = "254786799922";
+const CALL_NUMBER = "+254786703129";
+const CALL_DISPLAY_NUMBER = "0786703129";
+
 function closeMenu() {
   document.getElementById("renegade-menu")?.remove();
   document.body.style.overflow = "";
@@ -38,6 +42,15 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeMenu();
 });
+
+if (!document.querySelector(".local-call-shortcut")) {
+  const callShortcut = document.createElement("a");
+  callShortcut.href = `tel:${CALL_NUMBER}`;
+  callShortcut.className = "local-call-shortcut";
+  callShortcut.setAttribute("aria-label", `Call Renegade Air at ${CALL_DISPLAY_NUMBER}`);
+  callShortcut.textContent = `Call ${CALL_DISPLAY_NUMBER}`;
+  document.body.appendChild(callShortcut);
+}
 
 const tripLabels = Array.from(document.querySelectorAll("label")).filter((label) =>
   /^(Return|One way)$/.test(label.textContent.trim())
@@ -395,7 +408,7 @@ if (localBookingForm) {
           <div class="local-search-summary"><strong>${routeCode}</strong><span>${displayDate(search.depart)}${search.returnDate ? ` · Return ${displayDate(search.returnDate)}` : ""}</span><span>${search.adults + search.children + search.infants} traveller${search.adults + search.children + search.infants === 1 ? "" : "s"}</span></div>
           <article class="local-inquiry-card"><p class="eyebrow">Starting fare</p><strong>${money(destination.fare)}</strong><span>one way · ${escapeHtml(destination.type)}</span></article>
           <p>Schedule and availability are confirmed by our team. ${destination.code === "NYK" ? "Charter timing and arrangements are made by request." : "Your requested travel date and route will be confirmed on WhatsApp."}</p>
-          <a class="flight-search-contact" href="https://wa.me/254786799922?text=${encodeURIComponent(message)}" target="_blank" rel="noopener noreferrer">Confirm this route on WhatsApp <span aria-hidden="true">→</span></a>
+          <a class="flight-search-contact" href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}" target="_blank" rel="noopener noreferrer">Confirm this route on WhatsApp <span aria-hidden="true">→</span></a>
         </div>`;
       localResults.hidden = false;
       localResults.querySelector(".flight-search-close").addEventListener("click", () => {
@@ -412,7 +425,7 @@ if (localBookingForm) {
             <div><p class="eyebrow">Available flights</p><h2>${escapeHtml(routeName)}</h2></div>
           </div>
           <p>We don't currently list a scheduled service for this route online. Contact our team to check the route and arrange your journey.</p>
-          <a class="flight-search-contact" href="https://wa.me/254786799922?text=${encodeURIComponent(`Hello Renegade Air, please confirm flights for ${routeName} on ${displayDate(search.depart)}.`)}" target="_blank" rel="noopener noreferrer">Check this route on WhatsApp <span aria-hidden="true">→</span></a>
+          <a class="flight-search-contact" href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hello Renegade Air, please confirm flights for ${routeName} on ${displayDate(search.depart)}.`)}" target="_blank" rel="noopener noreferrer">Check this route on WhatsApp <span aria-hidden="true">→</span></a>
         </div>`;
       localResults.hidden = false;
       return;
@@ -651,7 +664,7 @@ if (localBookingForm) {
       `Estimated fare: ${money(currentFare(selectedFlight) * (search.adults + search.children))}`,
       contactDetails.requests ? `Special requests: ${contactDetails.requests}` : "",
     ].filter(Boolean).join("\n");
-    const whatsappUrl = `https://wa.me/254786799922?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     localResults.innerHTML = `
       <section class="local-reservation">
         <div class="local-reservation-heading"><p class="eyebrow">Guest reservation</p><h1>Review your booking.</h1><p>Check your details before sending your request to our WhatsApp team.</p></div>
