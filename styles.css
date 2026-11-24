@@ -760,6 +760,93 @@ body.local-search-mode .booking-panel {
   font-weight: 600;
 }
 
+.local-charter-section {
+  padding: 4rem 1.25rem;
+  background: #f5f7fa;
+  color: #10253a;
+}
+
+.local-charter-inner {
+  display: grid;
+  max-width: 80rem;
+  gap: 2rem;
+  margin: 0 auto;
+}
+
+.local-charter-intro .eyebrow {
+  margin: 0 0 0.6rem;
+  color: #1879a7;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.local-charter-intro h2 {
+  margin: 0;
+  font-family: Outfit, sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.local-charter-intro > p:last-child {
+  max-width: 38rem;
+  margin: 0.75rem 0 0;
+  color: #5b6876;
+}
+
+.local-charter-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.local-charter-list a {
+  display: block;
+  padding: 1.25rem;
+  border: 1px solid #e1e7ed;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #10253a;
+  text-decoration: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.local-charter-list a:hover {
+  border-color: #1879a7;
+  box-shadow: 0 8px 22px rgba(16, 37, 58, 0.08);
+}
+
+.local-charter-list a:focus-visible {
+  outline: 2px solid #1879a7;
+  outline-offset: 3px;
+}
+
+.local-charter-list p:first-child {
+  margin: 0;
+  color: #1879a7;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.local-charter-list h3 {
+  margin: 0.4rem 0;
+  font-family: Outfit, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.local-charter-list p:last-child {
+  margin: 0;
+  color: #5b6876;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 850px) {
   .local-flight-card {
     grid-template-columns: 1fr 1fr;
@@ -775,6 +862,13 @@ body.local-search-mode .booking-panel {
 
   .local-booking-summary {
     position: static;
+  }
+}
+
+@media (min-width: 851px) {
+  .local-charter-inner {
+    grid-template-columns: 0.75fr 1.25fr;
+    align-items: start;
   }
 }
 

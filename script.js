@@ -168,6 +168,10 @@ if (localBookingForm) {
     { code: "UKA", name: "Ukunda (Diani)", fare: 8500, type: "Route fare" },
     { code: "LOK", name: "Lodwar", fare: 10000, type: "Route fare" },
   ];
+  const charterRoutes = [
+    { from: "EDL", to: "KIS", fare: 4600 },
+    { from: "EDL", to: "LOK", fare: 6000 },
+  ];
   additionalDestinations.forEach((destination) => {
     citySelects.slice(0, 2).forEach((select) => {
       if (select.querySelector(`option[value="${destination.code}"]`)) return;
@@ -315,6 +319,41 @@ if (localBookingForm) {
       });
       routeList.appendChild(row);
     });
+
+    const charterSection = document.createElement("section");
+    charterSection.className = "local-charter-section";
+    charterSection.innerHTML = `
+      <div class="local-charter-inner">
+        <div class="local-charter-intro">
+          <p class="eyebrow">Private charters</p>
+          <h2>Direct charters from Eldoret</h2>
+          <p>Request a direct charter to Kisumu or Lodwar. Our team confirms timing and availability on WhatsApp.</p>
+        </div>
+        <ul class="local-charter-list"></ul>
+      </div>`;
+    const charterList = charterSection.querySelector(".local-charter-list");
+    charterRoutes.forEach((charter) => {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      const code = document.createElement("p");
+      const title = document.createElement("h3");
+      const fare = document.createElement("p");
+
+      link.href = "#";
+      code.textContent = `${charter.from} → ${charter.to}`;
+      title.textContent = `${airportName(charter.from)} to ${airportName(charter.to)}`;
+      fare.textContent = `Private charter · from ${money(charter.fare)}`;
+      link.append(code, title, fare);
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        citySelects[0].value = charter.from;
+        citySelects[1].value = charter.to;
+        localBookingForm.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      item.appendChild(link);
+      charterList.appendChild(item);
+    });
+    routeSection.insertAdjacentElement("afterend", charterSection);
   }
 
   localResults.hidden = true;
@@ -402,8 +441,39 @@ if (localBookingForm) {
     const routeCode = `${search.from} → ${search.to}`;
     const routeName = `${airportName(search.from)} to ${airportName(search.to)}`;
     const route = search.from === "WIL" ? search.to : search.from;
+    const charterRoute = charterRoutes.find((charter) =>
+      (search.from === charter.from && search.to === charter.to) ||
+      (search.from === charter.to && search.to === charter.from));
     const baseFare = search.from === "WIL" ? standardFares[search.to] :
       search.to === "WIL" ? standardFares[search.from] : null;
+
+    if (charterRoute) {
+      const message = [
+        "Hello Renegade Air, please confirm private charter availability.",
+        `Route: ${routeName} (${routeCode})`,
+        `Departure: ${displayDate(search.depart)}`,
+        search.returnDate ? `Return: ${displayDate(search.returnDate)}` : "",
+        `Travellers: ${search.adults + search.children + search.infants}`,
+        `Starting fare: ${money(charterRoute.fare)} one way`,
+      ].filter(Boolean).join("\n");
+      localResults.innerHTML = `
+        <div class="local-results-panel">
+          <div class="flight-search-results-heading">
+            <div><p class="eyebrow">Private charter</p><h2>${escapeHtml(routeName)}</h2></div>
+            <button class="flight-search-close" type="button" aria-label="Close search results">×</button>
+          </div>
+          <div class="local-search-summary"><strong>${routeCode}</strong><span>${displayDate(search.depart)}${search.returnDate ? ` · Return ${displayDate(search.returnDate)}` : ""}</span><span>${search.adults + search.children + search.infants} traveller${search.adults + search.children + search.infants === 1 ? "" : "s"}</span></div>
+          <article class="local-inquiry-card"><p class="eyebrow">Starting fare</p><strong>${money(charterRoute.fare)}</strong><span>one way · Private charter</span></article>
+          <p>Charter timing, availability and final fare are confirmed by our team on WhatsApp.</p>
+          <a class="flight-search-contact" href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}" target="_blank" rel="noopener noreferrer">Confirm this charter on WhatsApp <span aria-hidden="true">→</span></a>
+        </div>`;
+      localResults.hidden = false;
+      localResults.querySelector(".flight-search-close").addEventListener("click", () => {
+        exitSearchMode();
+        window.history.replaceState({}, "", window.location.pathname);
+      });
+      return;
+    }
 
     if (inquiryOnlyRoutes.has(route) && (search.from === "WIL" || search.to === "WIL")) {
       const destination = additionalDestinations.find((item) => item.code === route);
