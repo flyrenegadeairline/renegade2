@@ -50,15 +50,6 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeMenu();
 });
 
-if (!document.querySelector(".local-call-shortcut")) {
-  const callShortcut = document.createElement("a");
-  callShortcut.href = `tel:${CALL_NUMBER}`;
-  callShortcut.className = "local-call-shortcut";
-  callShortcut.setAttribute("aria-label", `Call Renegade Air at ${CALL_DISPLAY_NUMBER}`);
-  callShortcut.textContent = `Call ${CALL_DISPLAY_NUMBER}`;
-  document.body.appendChild(callShortcut);
-}
-
 const footerInfo = Array.from(document.querySelectorAll("footer h2"))
   .find((heading) => heading.textContent.trim() === "Information")?.parentElement;
 if (footerInfo && !footerInfo.querySelector(".local-footer-contact")) {
