@@ -689,6 +689,12 @@ body.local-search-mode .booking-panel {
   color: #1479a5;
 }
 
+/* Hide floating contact controls; keep inline and footer contact links available. */
+a[aria-label="Book with us on WhatsApp"],
+.local-call-shortcut {
+  display: none !important;
+}
+
 .local-whatsapp-button[aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
