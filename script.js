@@ -1,6 +1,36 @@
 const WHATSAPP_NUMBER = "254786799922";
 const CALL_NUMBER = "+254786703129";
 const CALL_DISPLAY_NUMBER = "0786703129";
+const NAIROBI_TIME_ZONE = "Africa/Nairobi";
+
+const getNairobiDateTime = () => {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: NAIROBI_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now).reduce((values, part) => {
+    if (part.type !== "literal") values[part.type] = part.value;
+    return values;
+  }, {});
+
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    minutes: (Number(parts.hour) * 60) + Number(parts.minute),
+  };
+};
+
+const parseFlightMinutes = (time) => {
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hour += 12;
+  return (hour * 60) + Number(match[2]);
+};
 
 const createBookingReference = () => {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -93,10 +123,9 @@ tripLabels.forEach((label) => {
 
 const dateInputs = Array.from(document.querySelectorAll('input[type="date"]'));
 if (dateInputs[0]) {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  dateInputs[0].value = local.toISOString().slice(0, 10);
-  dateInputs[0].min = dateInputs[0].value;
+  const today = getNairobiDateTime().date;
+  dateInputs[0].value = today;
+  dateInputs[0].min = today;
 }
 
 document.querySelectorAll("a[href]").forEach((link) => {
@@ -525,7 +554,36 @@ if (localBookingForm) {
       arrive,
       duration,
       standardFare: baseFare,
-    }));
+    })).filter((flight) => {
+      const nairobiNow = getNairobiDateTime();
+      if (search.depart < nairobiNow.date) return false;
+      if (search.depart !== nairobiNow.date) return true;
+      const departureMinutes = parseFlightMinutes(flight.depart);
+      return departureMinutes !== null && departureMinutes > nairobiNow.minutes;
+    });
+
+    if (flights.length === 0) {
+      localResults.innerHTML = `
+        <div class="local-results-panel">
+          <div class="flight-search-results-heading">
+            <div><p class="eyebrow">No available flights</p><h2>${escapeHtml(routeName)}</h2></div>
+            <button class="flight-search-close" type="button" aria-label="Close search results">×</button>
+          </div>
+          <p>All scheduled departures for ${escapeHtml(displayDate(search.depart))} have already passed. Please choose another date.</p>
+          <button type="button" class="local-primary-button flight-search-change-date">Choose another date</button>
+        </div>`;
+      localResults.hidden = false;
+      localResults.querySelector(".flight-search-close").addEventListener("click", () => {
+        exitSearchMode();
+        window.history.replaceState({}, "", window.location.pathname);
+      });
+      localResults.querySelector(".flight-search-change-date").addEventListener("click", () => {
+        dateFields[0].focus();
+        dateFields[0].showPicker?.();
+      });
+      return;
+    }
+
     availableFlights = flights;
     const bump = fareBump(search.depart);
     const renderCards = (sortBy) => {
@@ -568,7 +626,7 @@ if (localBookingForm) {
           <span>Direct flights · Daily</span>
         </div>
         <div class="local-result-toolbar">
-          <div><h3>${flights.length} flights found</h3><span>Schedules and final fare are confirmed by our team.</span></div>
+          <div><h3>${flights.length} flight${flights.length === 1 ? "" : "s"} found</h3><span>Schedules and final fare are confirmed by our team.</span></div>
           <label>Sort by
             <select class="local-sort-select" aria-label="Sort flights">
               <option value="fare">Lowest fare</option>
@@ -597,6 +655,13 @@ if (localBookingForm) {
         const button = event.target.closest("[data-flight]");
         if (!button) return;
         selectedFlight = availableFlights.find((flight) => flight.id === button.dataset.flight);
+        if (selectedFlight && search.depart === getNairobiDateTime().date) {
+          const departureMinutes = parseFlightMinutes(selectedFlight.depart);
+          if (departureMinutes !== null && departureMinutes <= getNairobiDateTime().minutes) {
+            renderResults();
+            return;
+          }
+        }
         selectedSeats = [];
         passengerDetails = [];
         contactDetails = {};
